@@ -11,9 +11,9 @@ def find_invitations_to_notify():
     # Checks that there is at list one event in the future.
     events = Event.objects.filter(starts__gte=timezone.now)
     if len(events) > 0:
-        # Gets invitations that have incoming event AND
+        # Gets invitations that have upcoming event AND
         # notifications as the same time. We fetch all the 
-        # events and linked invitations. We take only incoming
+        # events and linked invitations. We take only upcoming
         # events and filter notifications so that:
         #       GROUP BY is to get one notification per invitation
         #       ORDER BY is to get shortest notification only
@@ -32,6 +32,6 @@ def find_invitations_to_notify():
                 GROUP BY invit.id
                 ORDER BY notif.duration ASC
                 """)
-        # Send incoming signal for these invitations.
+        # Send upcoming signal for these invitations.
         for invitation in invitations:
-            invitation_incoming.send(invitation)
+            invitation_upcoming.send(invitation)
