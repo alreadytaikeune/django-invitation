@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
 from .models import *
-
+from django.conf import settings
+from invitation.sample.models import EVENT_MODEL, load_model_from_string
 
 class ContextAdmin(admin.ModelAdmin):
 	model = InvitationContext
@@ -20,3 +21,6 @@ class InvitationAdmin(admin.ModelAdmin):
 
 admin.site.register(InvitationContext, ContextAdmin)
 admin.site.register(Invitation, InvitationAdmin)
+
+Event = load_model_from_string(EVENT_MODEL)
+admin.site.register(Event)
