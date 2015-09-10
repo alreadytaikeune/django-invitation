@@ -9,7 +9,8 @@ AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
 """
 The following models are only sample models to run the app. You can 
-replace them with your own model simply by editing the
+replace them with your own model simply by editing the settings. Your 
+class should extends this one as starts field is needed.
 """
 class DefaultEvent(models.Model): 
     """

@@ -72,18 +72,18 @@ class InvitationManager(models.Manager):
 @python_2_unicode_compatible
 class Notification(models.Model):
     name = models.CharField(max_length=150)
-    time = models.DurationField()
+    duration = models.DurationField()
 
     class Meta:
         verbose_name = 'notification'
         verbose_name_plural = 'notifications'
-        unique_together = ('time',)
+        unique_together = ('duration',)
     
     def __str__(self):
-        return "Notification : {0}".format(self.time)
+        return "Notification : {0}".format(self.duration)
     
     def __unicode__(self):
-        return u'Notification : {0}'.format(self.time)
+        return u'Notification : {0}'.format(self.duration)
 
 """
 The class InvitationContext represents the set-up for an invitation: 
@@ -101,8 +101,6 @@ class InvitationContext(models.Model):
     event = models.ForeignKey(EVENT_MODEL, null=False)
     created = models.DateTimeField(default=timezone.now)
 
-    notifications = models.ManyToManyField(Notification, null=True)
-    
     objects = InvitationManager()
     
     class Meta:
@@ -126,6 +124,8 @@ class Invitation(models.Model):
     accepted = models.DateTimeField(blank=True, null=True)
     rejected = models.DateTimeField(blank=True, null=True)
     viewed = models.DateTimeField(blank=True, null=True)
+
+    notifications = models.ManyToManyField(Notification, blank=True)
 
     objects = InvitationManager()
     
