@@ -29,47 +29,47 @@ from django.conf import settings
 
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
-EVENT_MODEL = getattr(settings, 'EVENT_MODEL', '')
+EVENT_MODEL = getattr(settings, 'EVENT_MODEL', 'DefaultEvent')
 
 
 
 class InvitationManager(models.Manager):
-	
-	def invitations(self, user):
-		"""Returns the invitations context created by a specific user."""
-		return InvitationContext.objects.filter(inviter=user)
-	
-	def invited_to(self, user):
-		"""Returns the invitations context addressed to a specific user."""
-		return InvitationContext.objects.filter(invitation_set__invitee = user)
-	
-	def invitations_sent(self, event):
-		"""Returns the invitations related to an event."""
-		return Invitations.objects.filter(context__event = event)
+    
+    def invitations(self, user):
+        """Returns the invitations context created by a specific user."""
+        return InvitationContext.objects.filter(inviter=user)
+    
+    def invited_to(self, user):
+        """Returns the invitations context addressed to a specific user."""
+        return InvitationContext.objects.filter(invitation_set__invitee = user)
+    
+    def invitations_sent(self, event):
+        """Returns the invitations related to an event."""
+        return Invitations.objects.filter(context__event = event)
 
-	def invitations_sent_by(self, user):
-		"""Returns the invitations created by an inviter."""
-		return Invitations.objects.filter(context__inviter = user)
-	
-	def create_invite(self, inviter, invitee, event):
-		"""
-			Creates an invitation and its context for an event 
-			from an inviter to the invitee.
-		"""
-		return invite(invitee,create_context(inviter, event))
+    def invitations_sent_by(self, user):
+        """Returns the invitations created by an inviter."""
+        return Invitations.objects.filter(context__inviter = user)
+    
+    def create_invite(self, inviter, invitee, event):
+        """
+            Creates an invitation and its context for an event 
+            from an inviter to the invitee.
+        """
+        return invite(invitee,create_context(inviter, event))
 
-	def create_context(self, user, event):
-		"""Creates an invitation context for an event from an inviter."""
-		new_context = InvitationContext(inviter = user, event=event)
-		new_context.save()
-		return new_context
-	
-	def invite(self, user, context):
-		"""Creates an invitation in a context for an invitee."""
-		new_invite = Invitation(context=context, invitee=user)
-		new_invite.save()
-		invitation_sent.send(self, context = context, to_user = user)
-		return new_invite
+    def create_context(self, user, event):
+        """Creates an invitation context for an event from an inviter."""
+        new_context = InvitationContext(inviter = user, event=event)
+        new_context.save()
+        return new_context
+    
+    def invite(self, user, context):
+        """Creates an invitation in a context for an invitee."""
+        new_invite = Invitation(context=context, invitee=user)
+        new_invite.save()
+        invitation_sent.send(self, context = context, to_user = user)
+        return new_invite
 
 
 
@@ -85,63 +85,76 @@ the key (inviter, event).
 """
 @python_2_unicode_compatible
 class InvitationContext(models.Model):
-	inviter = models.ForeignKey(AUTH_USER_MODEL, null=False)
-	event = models.ForeignKey(EVENT_MODEL, null=False)
-	created = models.DateTimeField(default=timezone.now)
-	
-	objects=InviationManager()
-	
-	class Meta:
-		verbose_name = 'set-up for the invitation'
-		verbose_name_plural = 'set-ups for the invitation'
-		unique_together = ('inviter', 'event')
-	
-	def __str__(self):
-		return "User {0} is inviting at {1}".format(self.inviter_id, self.event_id)
-	
-	def __unicode__(self):
-		return u'User {0} is inviting at {1}'.format(self.inviter_id, self.event_id)
+    inviter = models.ForeignKey(AUTH_USER_MODEL, null=False)
+    event = models.ForeignKey(EVENT_MODEL, null=False)
+    created = models.DateTimeField(default=timezone.now)
+    
+    objects=InvitationManager()
+    
+    class Meta:
+        verbose_name = 'set-up for the invitation'
+        verbose_name_plural = 'set-ups for the invitation'
+        unique_together = ('inviter', 'event')
+    
+    def __str__(self):
+        return "User {0} is inviting at {1}".format(self.inviter_id, self.event_id)
+    
+    def __unicode__(self):
+        return u'User {0} is inviting at {1}'.format(self.inviter_id, self.event_id)
 
 
 
 @python_2_unicode_compatible
 class Invitation(models.Model):
-	context = models.ForeignKey(InvitationContext, null=False)
-	invitee = models.ForeignKey(AUTH_USER_MODEL, null=False)
-	created = models.DateTimeField(default=timezone.now)
-	accepted = models.DateTimeField(blank=True, null=True)
-	rejected = models.DateTimeField(blank=True, null=True)
-	viewed = models.DateTimeField(blank=True, null=True)
+    context = models.ForeignKey(InvitationContext, null=False)
+    invitee = models.ForeignKey(AUTH_USER_MODEL, null=False)
+    created = models.DateTimeField(default=timezone.now)
+    accepted = models.DateTimeField(blank=True, null=True)
+    rejected = models.DateTimeField(blank=True, null=True)
+    viewed = models.DateTimeField(blank=True, null=True)
 
-	objects=InviationManager()
-	
-	class Meta:
-		verbose_name = 'invitation'
-		verbose_name_plural = 'invitations'
-		unique_together = ('context', 'invitee')
-	
-	def accept():
-		self.accepted = timezone.now()
-		self.save()
-		invitation_accepted.send(sender = self, by_user=invitee, event=context.event)
-		return True
-	
-	def reject():
-		self.rejected = timezone.now()
-		self.save()
-		invitation_rejected.send(sender = self, by_user=invitee, event=context.event)
-		return True
-	
-	def mark_viewed():
-		self.viewed = timezone.now()
-		self.save()
-		invitation_viewed.send(sender = self)
-		return True
-		
-	def __str__(self):
-		return 'invitation for event %s' % self.context.event.name
-		
-	def __unicode__(self):
-		return u'invitation for event %s' % self.context.event.name
+    objects=InvitationManager()
+    
+    class Meta:
+        verbose_name = 'invitation'
+        verbose_name_plural = 'invitations'
+        unique_together = ('context', 'invitee')
+    
+    def accept():
+        self.accepted = timezone.now()
+        self.save()
+        invitation_accepted.send(sender = self, by_user=invitee, event=context.event)
+        return True
+    
+    def reject():
+        self.rejected = timezone.now()
+        self.save()
+        invitation_rejected.send(sender = self, by_user=invitee, event=context.event)
+        return True
+    
+    def mark_viewed():
+        self.viewed = timezone.now()
+        self.save()
+        invitation_viewed.send(sender = self)
+        return True
+        
+    def __str__(self):
+        return 'invitation for event %s' % self.context.event.name
+        
+    def __unicode__(self):
+        return u'invitation for event %s' % self.context.event.name
 
 
+"""
+The following models are only sample models to run the app. You can 
+replace them with your own model simply by editing the
+"""
+class DefaultEvent(models.Model): 
+    """
+        Default Event model for example.
+        .. todo:: add parameters to constructors to limit data
+    """
+    publisher = models.ForeignKey(AUTH_USER_MODEL, null=False)
+    place = models.CharField(max_length=100, blank=True, null=True)
+    name = models.CharField(max_length=200, null=False)
+    starts = models.DateTimeField(null=True, blank=True, default="")
