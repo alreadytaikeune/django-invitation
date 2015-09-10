@@ -29,5 +29,6 @@ class DefaultEvent(models.Model):
 EVENT_MODEL = getattr(settings, 'EVENT_MODEL', 'invitation.DefaultEvent')
 
 def load_model_from_string(model_name):
+    """Loads model from model name."""
     app_label,model_name = model_name.split(".",1)
     return apps.get_model(app_label=app_label,model_name=model_name)

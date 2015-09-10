@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('place', models.CharField(max_length=100, null=True, blank=True)),
                 ('name', models.CharField(max_length=200)),
-                ('starts', models.DateTimeField(default=b'', null=True, blank=True)),
+                ('starts', models.DateTimeField(default=django.utils.timezone.now, null=True, blank=True)),
                 ('publisher', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
             ],
         ),

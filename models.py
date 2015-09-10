@@ -54,7 +54,7 @@ class InvitationManager(models.Manager):
             Creates an invitation and its context for an event 
             from an inviter to the invitee.
         """
-        return invite(invitee,create_context(inviter, event))
+        return invite(invitee, create_context(inviter, event))
 
     def create_context(self, user, event):
         """Creates an invitation context for an event from an inviter."""
@@ -69,7 +69,21 @@ class InvitationManager(models.Manager):
         invitation_sent.send(self, context=context, to_user=user)
         return new_invite
 
+@python_2_unicode_compatible
+class Notification(models.Model):
+    name = models.CharField(max_length=150)
+    time = models.DurationField()
 
+    class Meta:
+        verbose_name = 'notification'
+        verbose_name_plural = 'notifications'
+        unique_together = ('time',)
+    
+    def __str__(self):
+        return "Notification : {0}".format(self.time)
+    
+    def __unicode__(self):
+        return u'Notification : {0}'.format(self.time)
 
 """
 The class InvitationContext represents the set-up for an invitation: 
@@ -86,8 +100,10 @@ class InvitationContext(models.Model):
     inviter = models.ForeignKey(AUTH_USER_MODEL, null=False)
     event = models.ForeignKey(EVENT_MODEL, null=False)
     created = models.DateTimeField(default=timezone.now)
+
+    notifications = models.ManyToManyField(Notification, null=True)
     
-    objects=InvitationManager()
+    objects = InvitationManager()
     
     class Meta:
         verbose_name = 'set-up for the invitation'
@@ -111,7 +127,7 @@ class Invitation(models.Model):
     rejected = models.DateTimeField(blank=True, null=True)
     viewed = models.DateTimeField(blank=True, null=True)
 
-    objects=InvitationManager()
+    objects = InvitationManager()
     
     class Meta:
         verbose_name = 'invitation'
