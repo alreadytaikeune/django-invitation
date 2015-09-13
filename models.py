@@ -71,6 +71,9 @@ class InvitationManager(models.Manager):
 
 @python_2_unicode_compatible
 class Notification(models.Model):
+    """
+        Notification model
+    """
     name = models.CharField(max_length=150)
     duration = models.DurationField()
 
@@ -118,6 +121,11 @@ class InvitationContext(models.Model):
 
 @python_2_unicode_compatible
 class Invitation(models.Model):
+    """
+        Invitation model
+
+        ..todo::add through class for notifications.
+    """
     context = models.ForeignKey(InvitationContext, null=False)
     invitee = models.ForeignKey(AUTH_USER_MODEL, null=False)
     created = models.DateTimeField(default=timezone.now)
@@ -134,19 +142,19 @@ class Invitation(models.Model):
         verbose_name_plural = 'invitations'
         unique_together = ('context', 'invitee')
     
-    def accept():
+    def accept(self):
         self.accepted = timezone.now()
         self.save()
-        invitation_accepted.send(sender=self, by_user=invitee, event=context.event)
+        invitation_accepted.send(sender=self, by_user=self.invitee, event=self.context.event)
         return True
     
-    def reject():
+    def reject(self):
         self.rejected = timezone.now()
         self.save()
-        invitation_rejected.send(sender=self, by_user=invitee, event=context.event)
+        invitation_rejected.send(sender=self, by_user=self.invitee, event=self.context.event)
         return True
     
-    def mark_viewed():
+    def mark_viewed(self):
         self.viewed = timezone.now()
         self.save()
         invitation_viewed.send(sender=self)

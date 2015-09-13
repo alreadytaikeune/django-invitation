@@ -13,12 +13,13 @@ def find_invitations_to_notify():
     if len(events) > 0:
         # Gets invitations that have upcoming event AND
         # notifications as the same time. We fetch all the 
-        # events and linked invitations. We take only upcoming
+        # events and linked invitations. We run only notifications
+        # which are current day notification. We take only upcoming
         # events and filter notifications so that:
         #       GROUP BY is to get one notification per invitation
         #       ORDER BY is to get shortest notification only
         invitations = Invitation.objects.raw(
-            """ SELECT * FROM invitation_invitation AS invit
+            """ SELECT invit.*, notif.duration, invnot.id AS notif_id FROM invitation_invitation AS invit
                 JOIN invitation_invitation_notifications AS invnot 
                     ON invnot.invitation_id = invit.id 
                 JOIN invitation_notification AS notif
@@ -29,9 +30,11 @@ def find_invitations_to_notify():
                     ON event.id = contex.event_id
                 WHERE event.starts > NOW()
                     AND (NOW() + INTERVAL notif.duration MICROSECOND) > event.starts
+                    AND (NOW() + INTERVAL (notif.duration - 86400*1000000) MICROSECOND) < event.starts
                 GROUP BY invit.id
                 ORDER BY notif.duration ASC
                 """)
         # Send upcoming signal for these invitations.
         for invitation in invitations:
             invitation_upcoming.send(invitation)
+        return [(invitation,invitation.duration) for invitation in invitations]
