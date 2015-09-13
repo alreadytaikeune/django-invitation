@@ -121,11 +121,7 @@ class InvitationContext(models.Model):
 
 @python_2_unicode_compatible
 class Invitation(models.Model):
-    """
-        Invitation model
-
-        ..todo::add through class for notifications.
-    """
+    """Invitation model"""
     context = models.ForeignKey(InvitationContext, null=False)
     invitee = models.ForeignKey(AUTH_USER_MODEL, null=False)
     created = models.DateTimeField(default=timezone.now)
@@ -133,7 +129,7 @@ class Invitation(models.Model):
     rejected = models.DateTimeField(blank=True, null=True)
     viewed = models.DateTimeField(blank=True, null=True)
 
-    notifications = models.ManyToManyField(Notification, blank=True)
+    notifications = models.ManyToManyField(Notification, blank=True, through="InvitationNotification")
 
     objects = InvitationManager()
     
@@ -165,3 +161,21 @@ class Invitation(models.Model):
         
     def __unicode__(self):
         return u'invitation for event %s' % self.context.event.name
+
+@python_2_unicode_compatible
+class InvitationNotification(models.Model):
+    invitation = models.ForeignKey(Invitation, null=False)
+    notification = models.ForeignKey(Notification, null=False)
+
+    sent = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'notification for invitation'
+        verbose_name_plural = 'notifications for invitations'
+        unique_together = ('invitation', 'notification')
+
+    def __str__(self):
+        return 'notification %s for invitation %s' % (self.notification,self.invitation)
+        
+    def __unicode__(self):
+        return u'notification %s for invitation %s' % (self.notification,self.invitation)

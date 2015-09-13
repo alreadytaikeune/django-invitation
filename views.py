@@ -1,13 +1,18 @@
 # coding:utf-8
 from django.utils import timezone
 
-from invitation.models import Notification, Invitation, InvitationContext
+from invitation.models import InvitationNotification, Invitation
 from invitation.sample.models import EVENT_MODEL, AUTH_USER_MODEL, load_model_from_string
 from invitation.signals import *
 
 Event = load_model_from_string(EVENT_MODEL)
 
 def find_invitations_to_notify():
+    """
+        Find invitation to notify and send the notification.
+
+        ..todo::set older notifications to sent.
+    """
     # Checks that there is at list one event in the future.
     events = Event.objects.filter(starts__gte=timezone.now)
     if len(events) > 0:
@@ -20,7 +25,7 @@ def find_invitations_to_notify():
         #       ORDER BY is to get shortest notification only
         invitations = Invitation.objects.raw(
             """ SELECT invit.*, notif.duration, invnot.id AS notif_id FROM invitation_invitation AS invit
-                JOIN invitation_invitation_notifications AS invnot 
+                JOIN invitation_invitationnotification AS invnot 
                     ON invnot.invitation_id = invit.id 
                 JOIN invitation_notification AS notif
                     ON notif.id = invnot.notification_id
@@ -31,10 +36,14 @@ def find_invitations_to_notify():
                 WHERE event.starts > NOW()
                     AND (NOW() + INTERVAL notif.duration MICROSECOND) > event.starts
                     AND (NOW() + INTERVAL (notif.duration - 86400*1000000) MICROSECOND) < event.starts
+                    AND invnot.sent = 0
                 GROUP BY invit.id
                 ORDER BY notif.duration ASC
                 """)
+        output = []
         # Send upcoming signal for these invitations.
         for invitation in invitations:
             invitation_upcoming.send(invitation)
-        return [(invitation,invitation.duration) for invitation in invitations]
+            output.append((invitation,invitation.duration,))
+        InvitationNotification.objects.filter(id__in=(invitation.notif_id for invitation in invitations)).update(sent=True)
+        return output

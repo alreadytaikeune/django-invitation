@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from invitation.sample.models import EVENT_MODEL, AUTH_USER_MODEL, load_model_from_string
-from invitation.models import Invitation, InvitationContext, Notification
+from invitation.models import Invitation, InvitationNotification, InvitationContext, Notification
 from invitation.views import find_invitations_to_notify
 from invitation.signals import * 
 
@@ -44,9 +44,15 @@ class InvitationTest(TestCase):
         self.invitation = Invitation(context=self.invitation_context,
                                      invitee=self.invitee)
         self.invitation.save()
-        self.invitation.notifications.add(self.notification_day)
-        self.invitation.notifications.add(self.notification_week)
-        self.invitation.save()
+
+        self.invitation_notification_day = InvitationNotification(
+                                        invitation=self.invitation,
+                                        notification=self.notification_day)
+        self.invitation_notification_week = InvitationNotification(
+                                        invitation=self.invitation,
+                                        notification=self.notification_week)
+        self.invitation_notification_day.save()
+        self.invitation_notification_week.save()
 
 
     def test_accept_invitation(self):
@@ -93,3 +99,11 @@ class InvitationTest(TestCase):
         self.assertEqual(invitations[0][0].id,self.invitation.id)
         # This is the shortest delay which has been taken into account.
         self.assertEqual(invitations[0][1],self.notification_day.duration.days * 86400 * 1000000)
+
+        # Checks hat the notification has been set to sent !
+        try:
+            invitation_notification = InvitationNotification.objects.get(id=self.invitation_notification_day.id)
+        except InvitationNotification.DoesNotExist:
+            invitation_notification = None
+        self.assertIsNotNone(invitation_notification)
+        self.assertTrue(invitation_notification.sent)
